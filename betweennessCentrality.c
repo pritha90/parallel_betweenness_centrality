@@ -19,7 +19,7 @@ double betweennessCentrality_parallel(graph* G, double* BC) {
  * Serial Version
  *
  */
-double betweennessCentrality_serial(graph* G, double* BC, pthread_mutex_t A, pthread_mutex_t B) {
+double betweennessCentrality_serial(graph* G, double* BC, pthread_mutex_t A, pthread_mutex_t B, pthread_mutex_t C) {
   int *S; 	/* stack of vertices in order of distance from s. Also, implicitly, the BFS queue */
   plist* P;  	/* predecessors of vertex v on shortest paths from s */
   double* sig; 	/* No. of shortest paths */
@@ -31,9 +31,9 @@ double betweennessCentrality_serial(graph* G, double* BC, pthread_mutex_t A, pth
   int *start, *end;
   int seed = 2387;
   double elapsed_time;
-  int i, j, k, p, count, myCount;
+  int i, j, k, p, count;
   int v, w, vert;
-  int numV, num_traversals, n, m, phase_num;
+  int numV, num_traversals, n, m;
 
   /* numV: no. of vertices to run BFS from = 2^K4approx */
   //numV = 1<<K4approx;
@@ -75,11 +75,10 @@ double betweennessCentrality_serial(graph* G, double* BC, pthread_mutex_t A, pth
   d   = (int *) malloc(n*sizeof(int));
   del = (double *) calloc(n, sizeof(double));
 	
-  start = (int *) malloc(n*sizeof(int));
-  end = (int *) malloc(n*sizeof(int));
+ // start = (int *) malloc(n*sizeof(int));
+ // end = (int *) malloc(n*sizeof(int));
 
   num_traversals = 0;
-  myCount = 0;
 
   for (i=0; i<n; i++) {
     d[i] = -1;
@@ -104,12 +103,15 @@ double betweennessCentrality_serial(graph* G, double* BC, pthread_mutex_t A, pth
 		sig[i] = 1;
 		d[i] = 0;
 		S[0] = i;
+		int * start = (int *) malloc(n*sizeof(int));
+		int * end = (int *) malloc(n*sizeof(int));
 		start[0] = 0;
 		end[0] = 1;
 		
-		count = 1;
-		phase_num = 0;
-
+		int count = 1;
+		int phase_num = 0;
+		int myCount = 0;
+		int v, w;
 		while (end[phase_num] - start[phase_num] > 0) {
 				myCount = 0;
 				// BFS to destination, calculate distances, 
@@ -161,7 +163,9 @@ double betweennessCentrality_serial(graph* G, double* BC, pthread_mutex_t A, pth
 					del[v] = del[v] + sig[v]*(1+del[w])/sig[w];
 					pthread_mutex_unlock(&B);
 				}
+				pthread_mutex_lock(&C);
 				BC[w] += del[w];
+				pthread_mutex_unlock(&C);
 			}
 
 			phase_num--;
@@ -186,8 +190,8 @@ double betweennessCentrality_serial(graph* G, double* BC, pthread_mutex_t A, pth
   free(sig);
   free(d);
   free(del);
-  free(start);
-  free(end);
+//  free(start);
+  //free(end);
   elapsed_time = get_seconds() - elapsed_time;
   free(Srcs);
 

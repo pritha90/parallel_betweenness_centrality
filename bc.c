@@ -15,7 +15,7 @@ void usage_error () {
 int main(int argc, char** argv)
 {
   graph* G;            // The graph data structure -- see defs.h 
-  cilk::reducer_opadd<double>  *BC;          // BC output 
+  double  *BC;          // BC output 
   int nrows, ncols, scale, nread, vtx, r, c, checkable;
   int *head, *tail;
   double elapsed_time;
@@ -74,16 +74,17 @@ int main(int argc, char** argv)
   /*  Betweenness centrality                    */
   /* ------------------------------------------ */
   
-  BC = (reducer *) calloc(G->nv, sizeof(double));
+  BC = (double *) calloc(G->nv, sizeof(double));
   if (serial) {
     fprintf(stderr, "\nRunning sequential betweenness centrality...\n");
-    pthread_mutex_t A, B; //define the lock
+    pthread_mutex_t A, B, C; //define the lock
     pthread_mutex_init(&A,NULL); //initialize the lock
     pthread_mutex_init(&B,NULL); //initialize the lock
+    pthread_mutex_init(&C,NULL); //initialize the lock
     //Cilk_lockvar A, B;
     //Cilk_lock_init(A);
     //Cilk_lock_init(B);
-    elapsed_time = betweennessCentrality_serial(G, BC, A, B);
+    elapsed_time = betweennessCentrality_serial(G, BC, A, B, C);
   } else {
     fprintf(stderr, "\nRunning parallel betweenness centrality...\n");
     elapsed_time = betweennessCentrality_parallel(G, BC);
