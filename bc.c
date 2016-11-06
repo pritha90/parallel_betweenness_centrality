@@ -1,5 +1,7 @@
+#include <pthread.h>
 #include "defs.h"
 #include <cilk/cilk.h>
+//#include <cilk-lib.h>
 
 void usage_error () {
   fprintf(stderr, "usage: ./bc <-serial|-parallel> -torus <nrows> <ncols> (computes BC for a torus)\n");
@@ -7,11 +9,13 @@ void usage_error () {
   fprintf(stderr, "usage: ./bc <-serial|-parallel> (computes BC for a graph with edges from stdin\n");
   exit(-1);
 }
+//typedef reducer_opadd<double> reducer;
+ // reducer *result=new reducer[n];
 
 int main(int argc, char** argv)
 {
   graph* G;            // The graph data structure -- see defs.h 
-  double *BC;          // BC output 
+  cilk::reducer_opadd<double>  *BC;          // BC output 
   int nrows, ncols, scale, nread, vtx, r, c, checkable;
   int *head, *tail;
   double elapsed_time;
@@ -70,10 +74,16 @@ int main(int argc, char** argv)
   /*  Betweenness centrality                    */
   /* ------------------------------------------ */
   
-  BC = (double *) calloc(G->nv, sizeof(double));
+  BC = (reducer *) calloc(G->nv, sizeof(double));
   if (serial) {
     fprintf(stderr, "\nRunning sequential betweenness centrality...\n");
-    elapsed_time = betweennessCentrality_serial(G, BC);
+    pthread_mutex_t A, B; //define the lock
+    pthread_mutex_init(&A,NULL); //initialize the lock
+    pthread_mutex_init(&B,NULL); //initialize the lock
+    //Cilk_lockvar A, B;
+    //Cilk_lock_init(A);
+    //Cilk_lock_init(B);
+    elapsed_time = betweennessCentrality_serial(G, BC, A, B);
   } else {
     fprintf(stderr, "\nRunning parallel betweenness centrality...\n");
     elapsed_time = betweennessCentrality_parallel(G, BC);

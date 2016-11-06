@@ -19,7 +19,7 @@ double betweennessCentrality_parallel(graph* G, double* BC) {
  * Serial Version
  *
  */
-double betweennessCentrality_serial(graph* G, double* BC) {
+double betweennessCentrality_serial(graph* G, double* BC, pthread_mutex_t A, pthread_mutex_t B) {
   int *S; 	/* stack of vertices in order of distance from s. Also, implicitly, the BFS queue */
   plist* P;  	/* predecessors of vertex v on shortest paths from s */
   double* sig; 	/* No. of shortest paths */
@@ -88,7 +88,7 @@ double betweennessCentrality_serial(graph* G, double* BC) {
   /***********************************/
   /*** MAIN LOOP *********************/
   /***********************************/
-  for (p=0; p<n; p++) {
+  cilk_for (p=0; p<n; p++) {
 
 		i = Srcs[p];
 		if (G->firstnbr[i+1] - G->firstnbr[i] == 0) {
@@ -97,9 +97,9 @@ double betweennessCentrality_serial(graph* G, double* BC) {
 			num_traversals++;
 		}
 
-		if (num_traversals == numV + 1) {
+/*		if (num_traversals == numV + 1) {
 			break;
-		}
+		}*/
 		
 		sig[i] = 1;
 		d[i] = 0;
@@ -120,7 +120,8 @@ double betweennessCentrality_serial(graph* G, double* BC) {
 					for ( j=G->firstnbr[v]; j<G->firstnbr[v+1]; j++ ) {
 						w = G->nbr[j];
 						if (v != w) {
-
+							//Cilk_lock(&A);
+							pthread_mutex_lock(&A);
 							/* w found for the first time? */ 
 							if (d[w] == -1) {
 								//printf("n=%d, j=%d, start=%d, end=%d, count=%d, vert=%d, w=%d, v=%d\n",n,j,start[phase_num],end[phase_num],myCount,vert,w,v);
@@ -133,6 +134,8 @@ double betweennessCentrality_serial(graph* G, double* BC) {
 								sig[w] += sig[v]; 
 								P[w].list[P[w].count++] = v;
 							}
+							//Cilk_unlock(&A);
+							pthread_mutex_unlock(&A);
 						
 						}
 					}
@@ -154,7 +157,9 @@ double betweennessCentrality_serial(graph* G, double* BC) {
 				w = S[j];
 				for (k = 0; k < P[w].count; k++) {
 					v = P[w].list[k];
+					pthread_mutex_lock(&B);
 					del[v] = del[v] + sig[v]*(1+del[w])/sig[w];
+					pthread_mutex_unlock(&B);
 				}
 				BC[w] += del[w];
 			}

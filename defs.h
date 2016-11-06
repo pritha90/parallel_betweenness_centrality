@@ -32,7 +32,7 @@ typedef struct
 
 /* Function declarations */
 double betweennessCentrality_parallel(graph*, double*);
-double betweennessCentrality_serial(graph*, double*);
+double betweennessCentrality_serial(graph*, double*, pthread_mutex_t, pthread_mutex_t);
 double generateTorus(graph*, int, int);
 double generateGrid(graph*, int, int);
 int read_edge_list (int**, int**);
