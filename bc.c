@@ -84,10 +84,17 @@ int main(int argc, char** argv)
     //Cilk_lockvar A, B;
     //Cilk_lock_init(A);
     //Cilk_lock_init(B);
-    elapsed_time = betweennessCentrality_serial(G, BC, A, B, C);
+    elapsed_time = betweennessCentrality_serial(G, BC);
   } else {
     fprintf(stderr, "\nRunning parallel betweenness centrality...\n");
-    elapsed_time = betweennessCentrality_parallel(G, BC);
+    pthread_mutex_t A, B, C; //define the lock
+    pthread_mutex_init(&A,NULL); //initialize the lock
+    pthread_mutex_init(&B,NULL); //initialize the lock
+    pthread_mutex_init(&C,NULL); //initialize the lock
+    //Cilk_lockvar A, B;
+    //    //Cilk_lock_init(A);
+    //        //Cilk_lock_init(B);
+    elapsed_time = betweennessCentrality_parallel(G, BC, A, B, C);
   }
   fprintf(stderr, "Time for betweenness centrality is %9.6f sec.\n", elapsed_time);
   fprintf(stderr, "TEPS score is %4.3e\n\n", G->nv * (G->ne) / elapsed_time );
